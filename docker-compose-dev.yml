@@ -1,0 +1,42 @@
+version: '3.8'
+services:
+  php:
+    container_name: {PROJECT_NAME}_app
+    build: .
+    volumes:
+      - ./:/var/www/html
+    ports:
+      - 9000:9000
+    depends_on:
+      - db
+    env_file:
+      - ./.env
+  nginx:
+    image: nginx:alpine
+    container_name: {PROJECT_NAME}_nginx
+    volumes:
+      - ./:/var/www/html
+      - ./docker-config/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./logs/nginx/:/var/log/nginx/
+    ports:
+      - 80:80
+    depends_on:
+      - php
+  db:
+    platform: linux/x86_64
+    image: mysql:8.0
+    container_name: {PROJECT_NAME}_db
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    cap_add:
+      - SYS_NICE
+    volumes:
+      - ./logs/mysql:/var/log/mysql/
+      - ./data:/var/lib/mysql
+      - ./docker-config/mysql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d/
+    env_file:
+      - ./.env
